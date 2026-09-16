@@ -1,0 +1,59 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract source archive
+        run: |
+          mkdir build-source
+          unzip -q source.zip -d build-source
+          test -f build-source/huoyun-duizhang-app/package.json
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: build-source/huoyun-duizhang-app/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        working-directory: build-source/huoyun-duizhang-app
+        run: npm ci --no-audit --no-fund
+
+      - name: Type check
+        working-directory: build-source/huoyun-duizhang-app
+        run: npm run typecheck
+
+      - name: Expo prebuild
+        working-directory: build-source/huoyun-duizhang-app
+        run: npx expo prebuild --platform android --non-interactive
+
+      - name: Build debug APK
+        working-directory: build-source/huoyun-duizhang-app/android
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: huoyun-ledger-debug-apk
+          path: build-source/huoyun-duizhang-app/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
