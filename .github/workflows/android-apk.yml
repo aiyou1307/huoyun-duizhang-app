@@ -40,6 +40,10 @@ jobs:
         working-directory: build-source/huoyun-duizhang-app
         run: npm run typecheck
 
+      - name: Data regression tests
+        working-directory: build-source/huoyun-duizhang-app
+        run: npm test
+
       - name: Expo prebuild
         working-directory: build-source/huoyun-duizhang-app
         run: npx expo prebuild --platform android --non-interactive
